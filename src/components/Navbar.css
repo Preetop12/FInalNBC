@@ -1,0 +1,199 @@
+/* ── NAVBAR ── */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  border-bottom: 1px solid rgba(46, 46, 61, 0.6);
+  transition: background var(--transition-slow), box-shadow var(--transition-slow);
+}
+
+.navbar.scrolled {
+  box-shadow: 0 4px 30px rgba(0,0,0,0.4);
+}
+
+.navbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 68px;
+  gap: 1.5rem;
+}
+
+/* Logo */
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-shrink: 0;
+  text-decoration: none;
+  transition: opacity var(--transition);
+}
+
+.navbar-logo:hover {
+  opacity: 0.85;
+}
+
+.logo-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #8cf0ff 0%, #00daf3 60%, #00c8e8 100%);
+  font-size: 0.5625rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #003039;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(0, 200, 232, 0.35);
+}
+
+.logo-text {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--on-surface);
+  letter-spacing: -0.02em;
+}
+
+/* Desktop nav links */
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.navbar-link {
+  padding: 0.4rem 0.875rem;
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--on-surface-variant);
+  transition: color var(--transition), background var(--transition);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.navbar-link:hover {
+  color: var(--on-surface);
+  background: var(--surface-container);
+}
+
+.navbar-link--active {
+  color: var(--secondary);
+  background: rgba(140, 240, 255, 0.08);
+}
+
+/* Actions */
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-shrink: 0;
+}
+
+/* Hamburger */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition);
+}
+
+.hamburger:hover {
+  background: var(--surface-container);
+}
+
+.hamburger span {
+  display: block;
+  height: 1.5px;
+  width: 100%;
+  border-radius: 2px;
+  background: var(--on-surface);
+  transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease, width 0.3s ease;
+}
+
+.hamburger span:nth-child(3) {
+  width: 75%;
+}
+
+.hamburger--open span:nth-child(1) {
+  transform: translateY(6.5px) rotate(45deg);
+}
+.hamburger--open span:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+.hamburger--open span:nth-child(3) {
+  transform: translateY(-6.5px) rotate(-45deg);
+  width: 100%;
+}
+
+/* Mobile menu */
+.mobile-menu {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.35s cubic-bezier(0.4,0,0.2,1);
+  background: rgba(12, 12, 15, 0.97);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid var(--outline-variant);
+}
+
+.mobile-menu--open {
+  max-height: 500px;
+}
+
+.mobile-menu-content {
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 0 1.25rem;
+}
+
+.mobile-menu-link {
+  display: block;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--on-surface-variant);
+  transition: color var(--transition), background var(--transition), padding-left var(--transition);
+  letter-spacing: -0.01em;
+}
+
+.mobile-menu-link:hover {
+  color: var(--secondary);
+  background: rgba(140, 240, 255, 0.05);
+  padding-left: 2rem;
+}
+
+.mobile-menu-link.navbar-link--active {
+  color: var(--secondary);
+  background: rgba(140, 240, 255, 0.06);
+}
+
+.mobile-menu-divider {
+  height: 1px;
+  background: var(--outline-variant);
+  margin: 0.5rem 1.5rem;
+}
+
+.mobile-menu-footer {
+  padding: 0.5rem 1.5rem 0;
+  display: flex;
+  gap: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .navbar-links { display: none; }
+  .hamburger { display: flex; }
+  .navbar-actions .btn-primary { display: none; }
+  .navbar-actions .dashboard-avatar-wrap { display: none; }
+}

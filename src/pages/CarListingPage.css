@@ -1,0 +1,230 @@
+/* ── CAR LISTING PAGE ── */
+.listing-page {
+  padding-top: 68px;
+  min-height: 100vh;
+}
+
+/* Header */
+.listing-header {
+  background: var(--surface-container-lowest);
+  border-bottom: 1px solid var(--outline-variant);
+  padding: 2.5rem 0 0;
+  position: sticky;
+  top: 68px;
+  z-index: 50;
+}
+
+.listing-header-inner {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  padding-bottom: 1.5rem;
+}
+
+.listing-controls {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Search input */
+.listing-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.listing-search-wrap svg {
+  position: absolute;
+  left: 0.875rem;
+  color: var(--on-surface-variant);
+  pointer-events: none;
+}
+
+.listing-search-input {
+  background: var(--surface-container);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-full);
+  padding: 0.5625rem 1rem 0.5625rem 2.5rem;
+  font-size: 0.875rem;
+  color: var(--on-surface);
+  outline: none;
+  width: 220px;
+  transition: border-color var(--transition), box-shadow var(--transition), width var(--transition-slow);
+}
+
+.listing-search-input:focus {
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 3px rgba(140, 240, 255, 0.1);
+  width: 280px;
+}
+
+.listing-search-input::placeholder {
+  color: var(--on-surface-variant);
+  opacity: 0.8;
+}
+
+/* Sort select */
+.listing-sort-select {
+  background: var(--surface-container);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-full);
+  padding: 0.5625rem 1rem;
+  font-size: 0.875rem;
+  color: var(--on-surface);
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 2rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a8a8b8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+}
+
+.listing-sort-select:focus {
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 3px rgba(140, 240, 255, 0.1);
+}
+
+/* Filter toggle button */
+.filter-toggle {
+  font-size: 0.8125rem;
+  padding: 0.5625rem 1.125rem;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+/* Filter panel */
+.filter-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
+  border-top: 1px solid transparent;
+}
+
+.filter-panel--open {
+  max-height: 400px;
+  border-top-color: var(--outline-variant);
+  padding: 1.5rem 0;
+}
+
+.filter-panel-inner {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  flex: 1;
+  min-width: 160px;
+}
+
+.filter-label {
+  color: var(--on-surface-variant);
+}
+
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.filter-chips .chip {
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition), transform var(--transition-spring);
+}
+
+.filter-chips .chip:hover {
+  transform: translateY(-1px);
+  background: var(--surface-container-high);
+}
+
+/* Price range slider */
+.price-range {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--secondary) 0%, var(--outline-variant) 0%);
+  outline: none;
+  cursor: pointer;
+}
+
+.price-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--secondary);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,200,232,0.4);
+  transition: transform var(--transition-spring);
+}
+
+.price-range::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+/* Results */
+.listing-results {
+  padding-top: 2rem;
+  padding-bottom: 4rem;
+}
+
+.listing-count {
+  margin-bottom: 1.5rem;
+  font-size: 0.8125rem;
+  color: var(--on-surface-variant);
+}
+
+/* Empty state */
+.listing-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 6rem 2rem;
+  text-align: center;
+  background: var(--surface-container-low);
+  border-radius: var(--radius-xl);
+  border: 1px dashed var(--outline-variant);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .listing-header {
+    position: static;
+    padding: 1.5rem 0 0;
+  }
+  .listing-header-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .listing-controls {
+    width: 100%;
+  }
+  .listing-search-input {
+    width: 100%;
+    flex: 1;
+  }
+  .listing-search-input:focus {
+    width: 100%;
+  }
+  .filter-panel-inner {
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+}
