@@ -24,4 +24,4 @@ A premium, interactive car selling platform with **zero brokerage**, featuring h
 - **Animations**: GSAP (GreenSock Animation Platform)
 
 ---
-*Created for Preetop12 by Antigravity.*
+*Created for Preet.*
