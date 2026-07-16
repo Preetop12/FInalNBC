@@ -1,16 +1,6 @@
-// NoBrokerCars — Supabase & Local Database Layer
-import { supabase } from './supabase';
+// NoBrokerCars — MongoDB & Local Database Layer
+import { mongoFetch, isMongoConfigured } from './mongodb';
 import { cars as defaultCars } from '../data/cars';
-
-// ─── Local Database Layer Fallback ────────────────────────────────────────────
-const isSupabaseWorking = () => {
-  const url = import.meta.env.VITE_SUPABASE_URL;
-  const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  if (!url || !key || url.includes('placeholder') || key.includes('placeholder') || key.startsWith('sb_publishable_val')) {
-    return false;
-  }
-  return true;
-};
 
 // Initialize localStorage on demand
 const initLocalDb = () => {
@@ -38,7 +28,7 @@ const initLocalDb = () => {
         seller_name: car.seller || 'Private Seller',
         seller_phone: '919999999999',
         seller_type: car.sellerType || 'Private Seller',
-        status: 'active', // Seeded cars are active
+        status: 'active',
         views: Math.floor(Math.random() * 150) + 10,
         inquiry_count: 0,
         specs: specs,
@@ -141,30 +131,30 @@ const setLocalSettings = (settings) => {
 const mapCarFromDb = (c) => {
   if (!c) return null;
   return {
-    id: c.id,
+    id: c.id || c._id,
     name: c.name,
     make: c.make,
     model: c.model,
     year: c.year,
-    fuelType: c.fuel_type,
+    fuelType: c.fuelType || c.fuel_type,
     transmission: c.transmission,
     mileage: c.mileage,
     ownership: c.ownership,
     location: c.location,
     price: Number(c.price),
-    priceDisplay: c.price_display || `₹${Number(c.price).toLocaleString('en-IN')}`,
+    priceDisplay: c.priceDisplay || c.price_display || `₹${Number(c.price).toLocaleString('en-IN')}`,
     tag: c.tag,
     image: c.image,
     gallery: c.gallery || [],
     description: c.description,
-    sellerEmail: c.seller_email,
-    sellerName: c.seller_name,
-    sellerPhone: c.seller_phone,
-    sellerType: c.seller_type || 'Private Seller',
+    sellerEmail: c.sellerEmail || c.seller_email,
+    sellerName: c.sellerName || c.seller_name || c.seller,
+    sellerPhone: c.sellerPhone || c.seller_phone,
+    sellerType: c.sellerType || c.seller_type || 'Private Seller',
     status: c.status,
     views: c.views,
-    inquiryCount: c.inquiry_count,
-    createdAt: c.created_at,
+    inquiryCount: c.inquiryCount || c.inquiry_count || 0,
+    createdAt: c.createdAt || c.created_at,
     specs: c.specs || [],
     color: c.color,
     registration: c.registration,
@@ -185,21 +175,21 @@ const mapCarToDb = (c) => {
     ownership: c.ownership,
     location: c.location,
     price: Number(c.price),
-    price_display: c.priceDisplay,
-    tag: c.tag,
+    price_display: c.priceDisplay || `₹${(c.price / 100000).toFixed(1)}L`,
+    tag: c.tag || null,
     image: c.image,
-    gallery: c.gallery,
-    description: c.description,
+    gallery: c.gallery || [],
+    description: c.description || '',
     seller_email: c.sellerEmail,
     seller_name: c.sellerName,
     seller_phone: c.sellerPhone,
-    seller_type: c.sellerType,
+    seller_type: c.sellerType || 'Private Seller',
     status: c.status || 'pending',
     views: c.views || 0,
     inquiry_count: c.inquiryCount || 0,
     specs: c.specs || [],
-    color: c.color,
-    registration: c.registration,
+    color: c.color || 'Standard',
+    registration: c.registration || '',
     negotiable: c.negotiable ?? true
   };
 };
@@ -212,7 +202,7 @@ const mapProfileFromDb = (p) => {
     phone: p.phone,
     role: p.role,
     avatar: p.avatar,
-    joinedAt: p.joined_at,
+    joinedAt: p.joinedAt || p.joined_at,
     banned: p.banned
   };
 };
@@ -220,15 +210,15 @@ const mapProfileFromDb = (p) => {
 const mapInquiryFromDb = (i) => {
   if (!i) return null;
   return {
-    id: i.id,
-    carId: i.car_id,
-    sellerEmail: i.seller_email,
-    buyerName: i.buyer_name,
-    buyerPhone: i.buyer_phone,
-    buyerEmail: i.buyer_email,
+    id: i.id || i._id,
+    carId: i.carId || i.car_id,
+    sellerEmail: i.sellerEmail || i.seller_email,
+    buyerName: i.buyerName || i.buyer_name,
+    buyerPhone: i.buyerPhone || i.buyer_phone,
+    buyerEmail: i.buyerEmail || i.buyer_email,
     message: i.message,
     read: i.read,
-    createdAt: i.created_at
+    createdAt: i.createdAt || i.created_at
   };
 };
 
@@ -247,14 +237,14 @@ const mapInquiryToDb = (i) => {
 const mapContactFromDb = (c) => {
   if (!c) return null;
   return {
-    id: c.id,
+    id: c.id || c._id,
     name: c.name,
     email: c.email,
     phone: c.phone,
     subject: c.subject,
     message: c.message,
     read: c.read,
-    createdAt: c.created_at
+    createdAt: c.createdAt || c.created_at
   };
 };
 
@@ -272,12 +262,12 @@ const mapContactToDb = (c) => {
 const mapSettingsFromDb = (s) => {
   if (!s) return null;
   return {
-    adminWhatsApp: s.admin_whatsapp,
-    listingFee: s.listing_fee,
-    aiModel: s.ai_model,
-    emailNotifications: s.email_notifications,
-    moderationEnabled: s.moderation_enabled,
-    siteName: s.site_name
+    adminWhatsApp: s.adminWhatsApp || s.admin_whatsapp,
+    listingFee: s.listingFee || s.listing_fee,
+    aiModel: s.aiModel || s.ai_model,
+    emailNotifications: s.emailNotifications || s.email_notifications,
+    moderationEnabled: s.moderationEnabled || s.moderation_enabled,
+    siteName: s.siteName || s.site_name
   };
 };
 
@@ -294,288 +284,265 @@ const mapSettingsToDb = (s) => {
 
 // ─── Cars API ─────────────────────────────────────────────────────────────────
 export const getCars = async () => {
-  if (!isSupabaseWorking()) {
+  if (!isMongoConfigured()) {
     return getLocalCarsRaw().map(mapCarFromDb);
   }
   try {
-    const { data, error } = await supabase
-      .from('cars')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return data.map(mapCarFromDb);
+    const response = await mongoFetch('find', 'cars', {
+      sort: { created_at: -1 }
+    });
+    const documents = response?.documents || [];
+    if (documents.length === 0) {
+      return getLocalCarsRaw().map(mapCarFromDb);
+    }
+    return documents.map(mapCarFromDb);
   } catch (err) {
-    console.error('Supabase error in getCars, falling back to local:', err);
+    console.error('MongoDB error in getCars, falling back to local:', err);
     return getLocalCarsRaw().map(mapCarFromDb);
   }
 };
 
 export const getCarById = async (id) => {
-  if (!isSupabaseWorking()) {
+  if (!isMongoConfigured()) {
     const car = getLocalCarsRaw().find(c => c.id === id);
     return car ? mapCarFromDb(car) : null;
   }
   try {
-    const { data, error } = await supabase
-      .from('cars')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
-    if (error) throw error;
-    return mapCarFromDb(data);
+    const response = await mongoFetch('findOne', 'cars', {
+      filter: { id: id }
+    });
+    const docVal = response?.document;
+    if (!docVal) {
+      const car = getLocalCarsRaw().find(c => c.id === id);
+      return car ? mapCarFromDb(car) : null;
+    }
+    return mapCarFromDb(docVal);
   } catch (err) {
-    console.error('Supabase error in getCarById, falling back to local:', err);
+    console.error('MongoDB error in getCarById, falling back to local:', err);
     const car = getLocalCarsRaw().find(c => c.id === id);
     return car ? mapCarFromDb(car) : null;
   }
 };
 
 export const getFeaturedCars = async () => {
-  if (!isSupabaseWorking()) {
-    return getLocalCarsRaw()
-      .filter(c => c.status === 'active')
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      .slice(0, 6)
-      .map(mapCarFromDb);
+  if (!isMongoConfigured()) {
+    return getLocalCarsRaw().slice(0, 3).map(mapCarFromDb);
   }
   try {
-    const { data, error } = await supabase
-      .from('cars')
-      .select('*')
-      .eq('status', 'active')
-      .order('created_at', { ascending: false })
-      .limit(6);
-    if (error) throw error;
-    return data.map(mapCarFromDb);
+    const response = await mongoFetch('find', 'cars', {
+      filter: { status: 'active' },
+      limit: 3
+    });
+    const documents = response?.documents || [];
+    if (documents.length === 0) {
+      const fallback = await mongoFetch('find', 'cars', { limit: 3 });
+      const fbDocs = fallback?.documents || [];
+      if (fbDocs.length === 0) {
+        return getLocalCarsRaw().slice(0, 3).map(mapCarFromDb);
+      }
+      return fbDocs.map(mapCarFromDb);
+    }
+    return documents.map(mapCarFromDb);
   } catch (err) {
-    console.error('Supabase error in getFeaturedCars, falling back to local:', err);
-    return getLocalCarsRaw()
-      .filter(c => c.status === 'active')
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      .slice(0, 6)
-      .map(mapCarFromDb);
+    console.error('MongoDB error in getFeaturedCars, falling back to local:', err);
+    return getLocalCarsRaw().slice(0, 3).map(mapCarFromDb);
   }
 };
 
 export const getCarsByUser = async (email) => {
-  if (!isSupabaseWorking()) {
-    return getLocalCarsRaw()
-      .filter(c => c.seller_email === email)
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      .map(mapCarFromDb);
+  if (!isMongoConfigured()) {
+    return getLocalCarsRaw().filter(c => c.seller_email === email).map(mapCarFromDb);
   }
   try {
-    const { data, error } = await supabase
-      .from('cars')
-      .select('*')
-      .eq('seller_email', email)
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return data.map(mapCarFromDb);
+    const response = await mongoFetch('find', 'cars', {
+      filter: { seller_email: email }
+    });
+    return (response?.documents || []).map(mapCarFromDb);
   } catch (err) {
-    console.error('Supabase error in getCarsByUser, falling back to local:', err);
-    return getLocalCarsRaw()
-      .filter(c => c.seller_email === email)
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      .map(mapCarFromDb);
+    console.error('MongoDB error in getCarsByUser, falling back to local:', err);
+    return getLocalCarsRaw().filter(c => c.seller_email === email).map(mapCarFromDb);
   }
 };
 
-export const addCar = async (carData) => {
-  const id = carData.id || Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-  const mapped = mapCarToDb({ ...carData, id });
-  
-  if (!isSupabaseWorking()) {
-    const localCars = getLocalCarsRaw();
-    const newCar = {
-      ...mapped,
-      created_at: new Date().toISOString()
-    };
-    localCars.unshift(newCar);
-    setLocalCarsRaw(localCars);
-    return mapCarFromDb(newCar);
+export const getCarsByStatus = async (status) => {
+  if (!isMongoConfigured()) {
+    return getLocalCarsRaw().filter(c => c.status === status).map(mapCarFromDb);
   }
-  
   try {
-    const { data, error } = await supabase
-      .from('cars')
-      .insert([mapped])
-      .select()
-      .single();
-    if (error) throw error;
-    return mapCarFromDb(data);
+    const response = await mongoFetch('find', 'cars', {
+      filter: { status: status }
+    });
+    return (response?.documents || []).map(mapCarFromDb);
   } catch (err) {
-    console.error('Supabase error in addCar, falling back to local:', err);
-    const localCars = getLocalCarsRaw();
-    const newCar = {
-      ...mapped,
-      created_at: new Date().toISOString()
-    };
-    localCars.unshift(newCar);
-    setLocalCarsRaw(localCars);
-    return mapCarFromDb(newCar);
+    console.error('MongoDB error in getCarsByStatus, falling back to local:', err);
+    return getLocalCarsRaw().filter(c => c.status === status).map(mapCarFromDb);
+  }
+};
+
+export const createCar = async (car) => {
+  const dbCar = mapCarToDb(car);
+  dbCar.created_at = new Date().toISOString();
+  if (!isMongoConfigured()) {
+    const cars = getLocalCarsRaw();
+    cars.push(dbCar);
+    setLocalCarsRaw(cars);
+    return;
+  }
+  try {
+    await mongoFetch('insertOne', 'cars', {
+      document: dbCar
+    });
+  } catch (err) {
+    console.error('MongoDB error in createCar, falling back to local:', err);
+    const cars = getLocalCarsRaw();
+    cars.push(dbCar);
+    setLocalCarsRaw(cars);
   }
 };
 
 export const updateCar = async (id, updates) => {
-  if (!isSupabaseWorking()) {
-    const localCars = getLocalCarsRaw();
-    const carIdx = localCars.findIndex(c => c.id === id);
-    if (carIdx > -1) {
-      const car = localCars[carIdx];
-      if (updates.status !== undefined) car.status = updates.status;
-      if (updates.views !== undefined) car.views = updates.views;
-      if (updates.inquiryCount !== undefined) car.inquiry_count = updates.inquiryCount;
-      if (updates.specs !== undefined) car.specs = updates.specs;
-      if (updates.gallery !== undefined) car.gallery = updates.gallery;
-      if (updates.image !== undefined) car.image = updates.image;
-      if (updates.price !== undefined) {
-        car.price = Number(updates.price);
-        car.price_display = updates.priceDisplay || `₹${Number(updates.price).toLocaleString('en-IN')}`;
-      }
-      if (updates.priceDisplay !== undefined) car.price_display = updates.priceDisplay;
-      if (updates.negotiable !== undefined) car.negotiable = updates.negotiable;
-      if (updates.description !== undefined) car.description = updates.description;
-      if (updates.sellerPhone !== undefined) car.seller_phone = updates.sellerPhone;
-      if (updates.sellerName !== undefined) car.seller_name = updates.sellerName;
-      
-      localCars[carIdx] = car;
-      setLocalCarsRaw(localCars);
+  const dbUpdates = {};
+  if (updates.fuelType !== undefined) dbUpdates.fuel_type = updates.fuelType;
+  if (updates.priceDisplay !== undefined) dbUpdates.price_display = updates.priceDisplay;
+  if (updates.sellerEmail !== undefined) dbUpdates.seller_email = updates.sellerEmail;
+  if (updates.sellerName !== undefined) dbUpdates.seller_name = updates.sellerName;
+  if (updates.sellerPhone !== undefined) dbUpdates.seller_phone = updates.sellerPhone;
+  if (updates.sellerType !== undefined) dbUpdates.seller_type = updates.sellerType;
+  if (updates.inquiryCount !== undefined) dbUpdates.inquiry_count = updates.inquiryCount;
+  if (updates.createdAt !== undefined) dbUpdates.created_at = updates.createdAt;
+  
+  Object.keys(updates).forEach((key) => {
+    const dbKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    if (dbUpdates[dbKey] === undefined) {
+      dbUpdates[dbKey] = updates[key];
+    }
+  });
+
+  if (!isMongoConfigured()) {
+    const cars = getLocalCarsRaw();
+    const idx = cars.findIndex(c => c.id === id);
+    if (idx > -1) {
+      cars[idx] = { ...cars[idx], ...dbUpdates };
+      setLocalCarsRaw(cars);
     }
     return;
   }
-  
-  const dbUpdates = {};
-  if (updates.status !== undefined) dbUpdates.status = updates.status;
-  if (updates.views !== undefined) dbUpdates.views = updates.views;
-  if (updates.inquiryCount !== undefined) dbUpdates.inquiry_count = updates.inquiryCount;
-  if (updates.specs !== undefined) dbUpdates.specs = updates.specs;
-  if (updates.gallery !== undefined) dbUpdates.gallery = updates.gallery;
-  if (updates.image !== undefined) dbUpdates.image = updates.image;
-  if (updates.price !== undefined) dbUpdates.price = Number(updates.price);
-  if (updates.priceDisplay !== undefined) dbUpdates.price_display = updates.priceDisplay;
-  if (updates.negotiable !== undefined) dbUpdates.negotiable = updates.negotiable;
-  if (updates.description !== undefined) dbUpdates.description = updates.description;
-  if (updates.sellerPhone !== undefined) dbUpdates.seller_phone = updates.sellerPhone;
-  if (updates.sellerName !== undefined) dbUpdates.seller_name = updates.sellerName;
-
   try {
-    const { error } = await supabase
-      .from('cars')
-      .update(dbUpdates)
-      .eq('id', id);
-    if (error) throw error;
+    await mongoFetch('updateOne', 'cars', {
+      filter: { id: id },
+      update: { $set: dbUpdates }
+    });
   } catch (err) {
-    console.error('Supabase error in updateCar, falling back to local:', err);
-    const localCars = getLocalCarsRaw();
-    const carIdx = localCars.findIndex(c => c.id === id);
-    if (carIdx > -1) {
-      const car = localCars[carIdx];
-      if (updates.status !== undefined) car.status = updates.status;
-      if (updates.views !== undefined) car.views = updates.views;
-      if (updates.inquiryCount !== undefined) car.inquiry_count = updates.inquiryCount;
-      if (updates.specs !== undefined) car.specs = updates.specs;
-      if (updates.gallery !== undefined) car.gallery = updates.gallery;
-      if (updates.image !== undefined) car.image = updates.image;
-      if (updates.price !== undefined) {
-        car.price = Number(updates.price);
-        car.price_display = updates.priceDisplay || `₹${Number(updates.price).toLocaleString('en-IN')}`;
-      }
-      if (updates.priceDisplay !== undefined) car.price_display = updates.priceDisplay;
-      if (updates.negotiable !== undefined) car.negotiable = updates.negotiable;
-      if (updates.description !== undefined) car.description = updates.description;
-      if (updates.sellerPhone !== undefined) car.seller_phone = updates.sellerPhone;
-      if (updates.sellerName !== undefined) car.seller_name = updates.sellerName;
-      
-      localCars[carIdx] = car;
-      setLocalCarsRaw(localCars);
+    console.error('MongoDB error in updateCar, falling back to local:', err);
+    const cars = getLocalCarsRaw();
+    const idx = cars.findIndex(c => c.id === id);
+    if (idx > -1) {
+      cars[idx] = { ...cars[idx], ...dbUpdates };
+      setLocalCarsRaw(cars);
     }
   }
 };
 
 export const deleteCar = async (id) => {
-  if (!isSupabaseWorking()) {
-    const localCars = getLocalCarsRaw();
-    const filtered = localCars.filter(c => c.id !== id);
+  if (!isMongoConfigured()) {
+    const cars = getLocalCarsRaw();
+    const filtered = cars.filter(c => c.id !== id);
     setLocalCarsRaw(filtered);
     return;
   }
   try {
-    const { error } = await supabase
-      .from('cars')
-      .delete()
-      .eq('id', id);
-    if (error) throw error;
+    await mongoFetch('deleteOne', 'cars', {
+      filter: { id: id }
+    });
   } catch (err) {
-    console.error('Supabase error in deleteCar, falling back to local:', err);
-    const localCars = getLocalCarsRaw();
-    const filtered = localCars.filter(c => c.id !== id);
+    console.error('MongoDB error in deleteCar, falling back to local:', err);
+    const cars = getLocalCarsRaw();
+    const filtered = cars.filter(c => c.id !== id);
     setLocalCarsRaw(filtered);
   }
 };
 
-export const incrementViews = async (id) => {
-  try {
-    const car = await getCarById(id);
-    if (car) {
-      await updateCar(id, { views: (car.views || 0) + 1 });
+export const incrementCarViews = async (id) => {
+  if (!isMongoConfigured()) {
+    const cars = getLocalCarsRaw();
+    const idx = cars.findIndex(c => c.id === id);
+    if (idx > -1) {
+      cars[idx].views = (cars[idx].views || 0) + 1;
+      setLocalCarsRaw(cars);
     }
+    return;
+  }
+  try {
+    await mongoFetch('updateOne', 'cars', {
+      filter: { id: id },
+      update: { $inc: { views: 1 } }
+    });
   } catch (err) {
-    console.error('Error incrementing views:', err);
+    console.error('MongoDB error in incrementCarViews, falling back to local:', err);
+    const cars = getLocalCarsRaw();
+    const idx = cars.findIndex(c => c.id === id);
+    if (idx > -1) {
+      cars[idx].views = (cars[idx].views || 0) + 1;
+      setLocalCarsRaw(cars);
+    }
   }
 };
 
-// ─── Users API ────────────────────────────────────────────────────────────────
+
+// ─── Profiles API ─────────────────────────────────────────────────────────────
 export const getUsers = async () => {
-  if (!isSupabaseWorking()) {
+  if (!isMongoConfigured()) {
     return getLocalProfiles().map(mapProfileFromDb);
   }
   try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .order('joined_at', { ascending: false });
-    if (error) throw error;
-    return data.map(mapProfileFromDb);
+    const response = await mongoFetch('find', 'profiles');
+    const documents = response?.documents || [];
+    if (documents.length === 0) {
+      return getLocalProfiles().map(mapProfileFromDb);
+    }
+    return documents.map(mapProfileFromDb);
   } catch (err) {
-    console.error('Supabase error in getUsers, falling back to local:', err);
+    console.error('MongoDB error in getUsers, falling back to local:', err);
     return getLocalProfiles().map(mapProfileFromDb);
   }
 };
 
 export const getUserByEmail = async (email) => {
-  if (!isSupabaseWorking()) {
+  if (!isMongoConfigured()) {
     const profile = getLocalProfiles().find(p => p.email === email);
     return profile ? mapProfileFromDb(profile) : null;
   }
   try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('email', email)
-      .maybeSingle();
-    if (error) throw error;
-    return mapProfileFromDb(data);
+    const response = await mongoFetch('findOne', 'profiles', {
+      filter: { email: email }
+    });
+    const docVal = response?.document;
+    if (!docVal) {
+      const profile = getLocalProfiles().find(p => p.email === email);
+      return profile ? mapProfileFromDb(profile) : null;
+    }
+    return mapProfileFromDb(docVal);
   } catch (err) {
-    console.error('Supabase error in getUserByEmail, falling back to local:', err);
+    console.error('MongoDB error in getUserByEmail, falling back to local:', err);
     const profile = getLocalProfiles().find(p => p.email === email);
     return profile ? mapProfileFromDb(profile) : null;
   }
 };
 
 export const upsertUser = async (userData) => {
-  if (!isSupabaseWorking()) {
+  const profileData = {
+    email: userData.email,
+    name: userData.name,
+    phone: userData.phone || '',
+    role: userData.role || 'user',
+    avatar: userData.avatar || userData.email[0].toUpperCase(),
+    banned: userData.banned ?? false,
+    joined_at: userData.joinedAt || userData.joined_at || new Date().toISOString()
+  };
+
+  if (!isMongoConfigured()) {
     const profiles = getLocalProfiles();
     const existingIdx = profiles.findIndex(p => p.email === userData.email);
-    const profileData = {
-      email: userData.email,
-      name: userData.name,
-      phone: userData.phone || '',
-      role: userData.role || 'user',
-      avatar: userData.avatar || userData.email[0].toUpperCase(),
-      banned: userData.banned ?? false,
-      joined_at: profiles[existingIdx]?.joined_at || new Date().toISOString()
-    };
     if (existingIdx > -1) {
       profiles[existingIdx] = { ...profiles[existingIdx], ...profileData };
     } else {
@@ -588,66 +555,18 @@ export const upsertUser = async (userData) => {
     return;
   }
   try {
-    const { data: existing } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('email', userData.email)
-      .maybeSingle();
-
-    const profileData = {
-      email: userData.email,
-      name: userData.name,
-      phone: userData.phone,
-      role: userData.role || 'user',
-      avatar: userData.avatar || userData.email[0].toUpperCase(),
-      banned: userData.banned ?? false
-    };
-
-    if (existing?.id) {
-      const { error } = await supabase
-        .from('profiles')
-        .update(profileData)
-        .eq('id', existing.id);
-      if (error) throw error;
-    } else {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user && user.email === userData.email) {
-        const { error } = await supabase
-          .from('profiles')
-          .upsert({
-            id: user.id,
-            ...profileData
-          });
-        if (error) throw error;
-      }
-    }
+    await mongoFetch('updateOne', 'profiles', {
+      filter: { email: userData.email },
+      update: { $set: profileData },
+      upsert: true
+    });
   } catch (err) {
-    console.error('Error upserting profile, falling back to local:', err);
-    const profiles = getLocalProfiles();
-    const existingIdx = profiles.findIndex(p => p.email === userData.email);
-    const profileData = {
-      email: userData.email,
-      name: userData.name,
-      phone: userData.phone || '',
-      role: userData.role || 'user',
-      avatar: userData.avatar || userData.email[0].toUpperCase(),
-      banned: userData.banned ?? false,
-      joined_at: profiles[existingIdx]?.joined_at || new Date().toISOString()
-    };
-    if (existingIdx > -1) {
-      profiles[existingIdx] = { ...profiles[existingIdx], ...profileData };
-    } else {
-      profiles.push({
-        id: userData.id || Math.random().toString(36).slice(2, 10),
-        ...profileData
-      });
-    }
-    setLocalProfiles(profiles);
+    console.error('MongoDB error in upsertUser, falling back to local:', err);
   }
 };
 
 export const updateUserRole = async (email, role) => {
-  if (!isSupabaseWorking()) {
+  if (!isMongoConfigured()) {
     const profiles = getLocalProfiles();
     const idx = profiles.findIndex(p => p.email === email);
     if (idx > -1) {
@@ -657,350 +576,211 @@ export const updateUserRole = async (email, role) => {
     return;
   }
   try {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ role })
-      .eq('email', email);
-    if (error) throw error;
+    await mongoFetch('updateOne', 'profiles', {
+      filter: { email: email },
+      update: { $set: { role: role } }
+    });
   } catch (err) {
-    console.error('Supabase error in updateUserRole, falling back to local:', err);
-    const profiles = getLocalProfiles();
-    const idx = profiles.findIndex(p => p.email === email);
-    if (idx > -1) {
-      profiles[idx].role = role;
-      setLocalProfiles(profiles);
-    }
+    console.error('MongoDB error in updateUserRole, falling back to local:', err);
   }
 };
 
-export const banUser = async (email) => {
-  if (!isSupabaseWorking()) {
+export const toggleUserBan = async (email) => {
+  if (!isMongoConfigured()) {
     const profiles = getLocalProfiles();
     const idx = profiles.findIndex(p => p.email === email);
     if (idx > -1) {
       profiles[idx].banned = !profiles[idx].banned;
       setLocalProfiles(profiles);
+      return profiles[idx].banned;
     }
-    return;
+    return false;
   }
   try {
-    const profile = await getUserByEmail(email);
-    if (profile) {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ banned: !profile.banned })
-        .eq('email', email);
-      if (error) throw error;
+    const response = await mongoFetch('findOne', 'profiles', {
+      filter: { email: email }
+    });
+    const docVal = response?.document;
+    if (docVal) {
+      const currentBan = docVal.banned || false;
+      await mongoFetch('updateOne', 'profiles', {
+        filter: { email: email },
+        update: { $set: { banned: !currentBan } }
+      });
+      return !currentBan;
     }
+    return false;
   } catch (err) {
-    console.error('Error banning/unbanning user, falling back to local:', err);
-    const profiles = getLocalProfiles();
-    const idx = profiles.findIndex(p => p.email === email);
-    if (idx > -1) {
-      profiles[idx].banned = !profiles[idx].banned;
-      setLocalProfiles(profiles);
-    }
+    console.error('MongoDB error in toggleUserBan, falling back to local:', err);
+    return false;
   }
 };
+
 
 // ─── Inquiries API ────────────────────────────────────────────────────────────
-export const getInquiries = async () => {
-  if (!isSupabaseWorking()) {
-    return getLocalInquiries()
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      .map(mapInquiryFromDb);
-  }
-  try {
-    const { data, error } = await supabase
-      .from('inquiries')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return data.map(mapInquiryFromDb);
-  } catch (err) {
-    console.error('Supabase error in getInquiries, falling back to local:', err);
-    return getLocalInquiries()
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      .map(mapInquiryFromDb);
-  }
-};
-
-export const getInquiriesForSeller = async (sellerEmail) => {
-  if (!isSupabaseWorking()) {
-    return getLocalInquiries()
-      .filter(i => i.seller_email === sellerEmail)
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      .map(mapInquiryFromDb);
-  }
-  try {
-    const { data, error } = await supabase
-      .from('inquiries')
-      .select('*')
-      .eq('seller_email', sellerEmail)
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return data.map(mapInquiryFromDb);
-  } catch (err) {
-    console.error('Supabase error in getInquiriesForSeller, falling back to local:', err);
-    return getLocalInquiries()
-      .filter(i => i.seller_email === sellerEmail)
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      .map(mapInquiryFromDb);
-  }
-};
-
-export const getInquiriesForCar = async (carId) => {
-  if (!isSupabaseWorking()) {
-    return getLocalInquiries()
-      .filter(i => i.car_id === carId)
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      .map(mapInquiryFromDb);
-  }
-  try {
-    const { data, error } = await supabase
-      .from('inquiries')
-      .select('*')
-      .eq('car_id', carId)
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return data.map(mapInquiryFromDb);
-  } catch (err) {
-    console.error('Supabase error in getInquiriesForCar, falling back to local:', err);
-    return getLocalInquiries()
-      .filter(i => i.car_id === carId)
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      .map(mapInquiryFromDb);
-  }
-};
-
-export const addInquiry = async (inqData) => {
-  const mapped = mapInquiryToDb(inqData);
-  
-  if (!isSupabaseWorking()) {
-    const inquiries = getLocalInquiries();
-    const newInq = {
-      id: Math.random().toString(36).slice(2, 10),
-      ...mapped,
-      created_at: new Date().toISOString()
-    };
-    inquiries.unshift(newInq);
-    setLocalInquiries(inquiries);
-    
-    // Increment local car inquiry count
-    const localCars = getLocalCarsRaw();
-    const carIdx = localCars.findIndex(c => c.id === inqData.carId);
-    if (carIdx > -1) {
-      localCars[carIdx].inquiry_count = (localCars[carIdx].inquiry_count || 0) + 1;
-      setLocalCarsRaw(localCars);
+export const getInquiries = async (sellerEmail) => {
+  if (!isMongoConfigured()) {
+    initLocalDb();
+    const inqs = JSON.parse(localStorage.getItem('nbc_inquiries') || '[]');
+    if (sellerEmail) {
+      return inqs.filter(i => i.seller_email === sellerEmail).map(mapInquiryFromDb);
     }
-    
-    return mapInquiryFromDb(newInq);
+    return inqs.map(mapInquiryFromDb);
   }
-  
   try {
-    const { data, error } = await supabase
-      .from('inquiries')
-      .insert([mapped])
-      .select()
-      .single();
-    if (error) throw error;
-
-    // Increment inquiry count on car
-    try {
-      const { data: car } = await supabase
-        .from('cars')
-        .select('inquiry_count')
-        .eq('id', inqData.carId)
-        .single();
-      if (car) {
-        await supabase
-          .from('cars')
-          .update({ inquiry_count: (car.inquiry_count || 0) + 1 })
-          .eq('id', inqData.carId);
-      }
-    } catch (err) {
-      console.error('Error updating inquiry count:', err);
-    }
-
-    return mapInquiryFromDb(data);
+    const filter = sellerEmail ? { seller_email: sellerEmail } : {};
+    const response = await mongoFetch('find', 'inquiries', {
+      filter,
+      sort: { created_at: -1 }
+    });
+    return (response?.documents || []).map(mapInquiryFromDb);
   } catch (err) {
-    console.error('Supabase error in addInquiry, falling back to local:', err);
-    const inquiries = getLocalInquiries();
-    const newInq = {
-      id: Math.random().toString(36).slice(2, 10),
-      ...mapped,
-      created_at: new Date().toISOString()
-    };
-    inquiries.unshift(newInq);
-    setLocalInquiries(inquiries);
-    
-    // Increment local car inquiry count
-    const localCars = getLocalCarsRaw();
-    const carIdx = localCars.findIndex(c => c.id === inqData.carId);
-    if (carIdx > -1) {
-      localCars[carIdx].inquiry_count = (localCars[carIdx].inquiry_count || 0) + 1;
-      setLocalCarsRaw(localCars);
-    }
-    
-    return mapInquiryFromDb(newInq);
+    console.error('MongoDB error in getInquiries, falling back to local:', err);
+    return [];
   }
 };
 
 export const markInquiryRead = async (id) => {
-  if (!isSupabaseWorking()) {
-    const inquiries = getLocalInquiries();
-    const idx = inquiries.findIndex(i => i.id === id);
+  if (!isMongoConfigured()) {
+    initLocalDb();
+    const inqs = JSON.parse(localStorage.getItem('nbc_inquiries') || '[]');
+    const idx = inqs.findIndex(i => i.id === id);
     if (idx > -1) {
-      inquiries[idx].read = true;
-      setLocalInquiries(inquiries);
+      inqs[idx].read = true;
+      localStorage.setItem('nbc_inquiries', JSON.stringify(inqs));
     }
     return;
   }
   try {
-    const { error } = await supabase
-      .from('inquiries')
-      .update({ read: true })
-      .eq('id', id);
-    if (error) throw error;
+    await mongoFetch('updateOne', 'inquiries', {
+      filter: { id: id },
+      update: { $set: { read: true } }
+    });
   } catch (err) {
-    console.error('Supabase error in markInquiryRead, falling back to local:', err);
-    const inquiries = getLocalInquiries();
-    const idx = inquiries.findIndex(i => i.id === id);
-    if (idx > -1) {
-      inquiries[idx].read = true;
-      setLocalInquiries(inquiries);
-    }
+    console.error('MongoDB error in markInquiryRead, falling back to local:', err);
   }
 };
+
 
 // ─── Contact Messages API ─────────────────────────────────────────────────────
 export const getContacts = async () => {
-  if (!isSupabaseWorking()) {
-    return getLocalContacts()
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      .map(mapContactFromDb);
+  if (!isMongoConfigured()) {
+    initLocalDb();
+    const contacts = JSON.parse(localStorage.getItem('nbc_contacts') || '[]');
+    return contacts.map(mapContactFromDb);
   }
   try {
-    const { data, error } = await supabase
-      .from('contacts')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return data.map(mapContactFromDb);
+    const response = await mongoFetch('find', 'contacts', {
+      sort: { created_at: -1 }
+    });
+    return (response?.documents || []).map(mapContactFromDb);
   } catch (err) {
-    console.error('Supabase error in getContacts, falling back to local:', err);
-    return getLocalContacts()
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      .map(mapContactFromDb);
-  }
-};
-
-export const addContact = async (contactData) => {
-  const mapped = mapContactToDb(contactData);
-  if (!isSupabaseWorking()) {
-    const contacts = getLocalContacts();
-    const newContact = {
-      id: Math.random().toString(36).slice(2, 10),
-      ...mapped,
-      created_at: new Date().toISOString()
-    };
-    contacts.unshift(newContact);
-    setLocalContacts(contacts);
-    return mapContactFromDb(newContact);
-  }
-  try {
-    const { data, error } = await supabase
-      .from('contacts')
-      .insert([mapped])
-      .select()
-      .single();
-    if (error) throw error;
-    return mapContactFromDb(data);
-  } catch (err) {
-    console.error('Supabase error in addContact, falling back to local:', err);
-    const contacts = getLocalContacts();
-    const newContact = {
-      id: Math.random().toString(36).slice(2, 10),
-      ...mapped,
-      created_at: new Date().toISOString()
-    };
-    contacts.unshift(newContact);
-    setLocalContacts(contacts);
-    return mapContactFromDb(newContact);
+    console.error('MongoDB error in getContacts, falling back to local:', err);
+    return [];
   }
 };
 
 export const markContactRead = async (id) => {
-  if (!isSupabaseWorking()) {
-    const contacts = getLocalContacts();
+  if (!isMongoConfigured()) {
+    initLocalDb();
+    const contacts = JSON.parse(localStorage.getItem('nbc_contacts') || '[]');
     const idx = contacts.findIndex(c => c.id === id);
     if (idx > -1) {
       contacts[idx].read = true;
-      setLocalContacts(contacts);
+      localStorage.setItem('nbc_contacts', JSON.stringify(contacts));
     }
     return;
   }
   try {
-    const { error } = await supabase
-      .from('contacts')
-      .update({ read: true })
-      .eq('id', id);
-    if (error) throw error;
+    await mongoFetch('updateOne', 'contacts', {
+      filter: { id: id },
+      update: { $set: { read: true } }
+    });
   } catch (err) {
-    console.error('Supabase error in markContactRead, falling back to local:', err);
-    const contacts = getLocalContacts();
-    const idx = contacts.findIndex(c => c.id === id);
-    if (idx > -1) {
-      contacts[idx].read = true;
-      setLocalContacts(contacts);
-    }
+    console.error('MongoDB error in markContactRead, falling back to local:', err);
   }
 };
 
 export const deleteContact = async (id) => {
-  if (!isSupabaseWorking()) {
-    const contacts = getLocalContacts();
+  if (!isMongoConfigured()) {
+    initLocalDb();
+    const contacts = JSON.parse(localStorage.getItem('nbc_contacts') || '[]');
     const filtered = contacts.filter(c => c.id !== id);
-    setLocalContacts(filtered);
+    localStorage.setItem('nbc_contacts', JSON.stringify(filtered));
     return;
   }
   try {
-    const { error } = await supabase
-      .from('contacts')
-      .delete()
-      .eq('id', id);
-    if (error) throw error;
+    await mongoFetch('deleteOne', 'contacts', {
+      filter: { id: id }
+    });
   } catch (err) {
-    console.error('Supabase error in deleteContact, falling back to local:', err);
-    const contacts = getLocalContacts();
-    const filtered = contacts.filter(c => c.id !== id);
-    setLocalContacts(filtered);
+    console.error('MongoDB error in deleteContact, falling back to local:', err);
   }
 };
 
+export const createInquiry = async (inquiry) => {
+  const dbInq = mapInquiryToDb(inquiry);
+  dbInq.created_at = new Date().toISOString();
+  dbInq.id = Math.random().toString(36).substring(2) + Date.now();
+  if (!isMongoConfigured()) {
+    initLocalDb();
+    const inqs = JSON.parse(localStorage.getItem('nbc_inquiries') || '[]');
+    inqs.push(dbInq);
+    localStorage.setItem('nbc_inquiries', JSON.stringify(inqs));
+    return;
+  }
+  try {
+    await mongoFetch('insertOne', 'inquiries', {
+      document: dbInq
+    });
+    
+    // Increment inquiry count of car
+    await mongoFetch('updateOne', 'cars', {
+      filter: { id: dbInq.car_id },
+      update: { $inc: { inquiry_count: 1 } }
+    });
+  } catch (err) {
+    console.error('MongoDB error in createInquiry, falling back to local:', err);
+  }
+};
+
+export const createContact = async (contact) => {
+  const dbContact = mapContactToDb(contact);
+  dbContact.created_at = new Date().toISOString();
+  dbContact.id = Math.random().toString(36).substring(2) + Date.now();
+  if (!isMongoConfigured()) {
+    initLocalDb();
+    const contacts = JSON.parse(localStorage.getItem('nbc_contacts') || '[]');
+    contacts.push(dbContact);
+    localStorage.setItem('nbc_contacts', JSON.stringify(contacts));
+    return;
+  }
+  try {
+    await mongoFetch('insertOne', 'contacts', {
+      document: dbContact
+    });
+  } catch (err) {
+    console.error('MongoDB error in createContact, falling back to local:', err);
+  }
+};
+
+
 // ─── Saved Cars API ───────────────────────────────────────────────────────────
 export const getSavedCars = async (userEmail) => {
-  if (!isSupabaseWorking()) {
+  if (!isMongoConfigured()) {
     initLocalDb();
     const saved = JSON.parse(localStorage.getItem('nbc_saved_cars') || '{}');
     return saved[userEmail] || [];
   }
   try {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('email', userEmail)
-      .maybeSingle();
-    if (!profile) return [];
-
-    const { data, error } = await supabase
-      .from('saved_cars')
-      .select('car_id')
-      .eq('user_id', profile.id);
-    if (error) throw error;
-    return data.map((item) => item.car_id);
+    const response = await mongoFetch('findOne', 'saved_cars', {
+      filter: { user_email: userEmail }
+    });
+    const docVal = response?.document;
+    if (!docVal) return [];
+    return docVal.car_ids || [];
   } catch (err) {
-    console.error('Supabase error in getSavedCars, falling back to local:', err);
+    console.error('MongoDB error in getSavedCars, falling back to local:', err);
     initLocalDb();
     const saved = JSON.parse(localStorage.getItem('nbc_saved_cars') || '{}');
     return saved[userEmail] || [];
@@ -1008,7 +788,7 @@ export const getSavedCars = async (userEmail) => {
 };
 
 export const toggleSaveCar = async (userEmail, carId) => {
-  if (!isSupabaseWorking()) {
+  if (!isMongoConfigured()) {
     initLocalDb();
     const saved = JSON.parse(localStorage.getItem('nbc_saved_cars') || '{}');
     if (!saved[userEmail]) saved[userEmail] = [];
@@ -1022,129 +802,86 @@ export const toggleSaveCar = async (userEmail, carId) => {
     return saved[userEmail];
   }
   try {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('email', userEmail)
-      .maybeSingle();
-    if (!profile) return [];
-
-    const { data: existing } = await supabase
-      .from('saved_cars')
-      .select('id')
-      .eq('user_id', profile.id)
-      .eq('car_id', carId)
-      .maybeSingle();
-
-    if (existing) {
-      const { error } = await supabase
-        .from('saved_cars')
-        .delete()
-        .eq('id', existing.id);
-      if (error) throw error;
-    } else {
-      const { error } = await supabase
-        .from('saved_cars')
-        .insert({ user_id: profile.id, car_id: carId });
-      if (error) throw error;
+    const response = await mongoFetch('findOne', 'saved_cars', {
+      filter: { user_email: userEmail }
+    });
+    const docVal = response?.document;
+    let carIds = [];
+    if (docVal) {
+      carIds = docVal.car_ids || [];
     }
-
-    return getSavedCars(userEmail);
+    const idx = carIds.indexOf(carId);
+    if (idx > -1) {
+      carIds.splice(idx, 1);
+    } else {
+      carIds.push(carId);
+    }
+    await mongoFetch('updateOne', 'saved_cars', {
+      filter: { user_email: userEmail },
+      update: { $set: { car_ids: carIds } },
+      upsert: true
+    });
+    return carIds;
   } catch (err) {
-    console.error('Supabase error in toggleSaveCar, falling back to local:', err);
+    console.error('MongoDB error in toggleSaveCar, falling back to local:', err);
     initLocalDb();
     const saved = JSON.parse(localStorage.getItem('nbc_saved_cars') || '{}');
-    if (!saved[userEmail]) saved[userEmail] = [];
-    const idx = saved[userEmail].indexOf(carId);
-    if (idx > -1) {
-      saved[userEmail].splice(idx, 1);
-    } else {
-      saved[userEmail].push(carId);
-    }
-    localStorage.setItem('nbc_saved_cars', JSON.stringify(saved));
-    return saved[userEmail];
+    return saved[userEmail] || [];
   }
 };
+
 
 // ─── Settings API ─────────────────────────────────────────────────────────────
 export const getSettings = async () => {
-  if (!isSupabaseWorking()) {
+  if (!isMongoConfigured()) {
     return mapSettingsFromDb(getLocalSettings());
   }
   try {
-    const { data, error } = await supabase
-      .from('settings')
-      .select('*')
-      .eq('id', 'platform')
-      .maybeSingle();
-    if (error || !data) throw error || new Error('No settings data');
-    return mapSettingsFromDb(data);
+    const response = await mongoFetch('findOne', 'settings', {
+      filter: { id: 'platform' }
+    });
+    const docVal = response?.document;
+    if (docVal) {
+      return mapSettingsFromDb(docVal);
+    }
+    return mapSettingsFromDb(getLocalSettings());
   } catch (err) {
-    console.error('Supabase error in getSettings, falling back to local:', err);
+    console.error('MongoDB error in getSettings, falling back to local:', err);
     return mapSettingsFromDb(getLocalSettings());
   }
 };
 
-export const updateSettings = async (updates) => {
-  const mapped = mapSettingsToDb(updates);
-  if (!isSupabaseWorking()) {
-    const settings = getLocalSettings();
-    const updated = { ...settings, ...mapped };
+export const updateSettings = async (settings) => {
+  const mapped = mapSettingsToDb(settings);
+  if (!isMongoConfigured()) {
+    const current = getLocalSettings();
+    const updated = { ...current, ...mapped };
     setLocalSettings(updated);
     return;
   }
   try {
-    const { error } = await supabase
-      .from('settings')
-      .update(mapped)
-      .eq('id', 'platform');
-    if (error) throw error;
+    await mongoFetch('updateOne', 'settings', {
+      filter: { id: 'platform' },
+      update: { $set: mapped },
+      upsert: true
+    });
   } catch (err) {
-    console.error('Supabase error in updateSettings, falling back to local:', err);
-    const settings = getLocalSettings();
-    const updated = { ...settings, ...mapped };
-    setLocalSettings(updated);
+    console.error('MongoDB error in updateSettings, falling back to local:', err);
   }
 };
+
 
 // ─── Storage API ──────────────────────────────────────────────────────────────
 export const uploadCarImage = async (file) => {
-  if (!isSupabaseWorking()) {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        resolve(reader.result);
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-  try {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-    const filePath = `listings/${fileName}`;
-
-    const { error } = await supabase.storage
-      .from('car-images')
-      .upload(filePath, file);
-
-    if (error) throw error;
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('car-images')
-      .getPublicUrl(filePath);
-
-    return publicUrl;
-  } catch (err) {
-    console.error('Supabase error in uploadCarImage, falling back to local Base64:', err);
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        resolve(reader.result);
-      };
-      reader.readAsDataURL(file);
-    });
-  }
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      resolve(reader.result);
+    };
+    reader.readAsDataURL(file);
+  });
 };
+
 
 // ─── Analytics helpers ────────────────────────────────────────────────────────
 export const getAnalytics = async () => {
@@ -1162,3 +899,12 @@ export const getAnalytics = async () => {
 
   return { cars, users, inquiries, contacts, active, pending, totalViews, avgPrice };
 };
+
+// ─── Export Aliases for Application Compatibility ─────────────────────────────────
+export const addCar = createCar;
+export const incrementViews = incrementCarViews;
+export const addInquiry = createInquiry;
+export const getInquiriesForSeller = getInquiries;
+export const banUser = toggleUserBan;
+export const addContact = createContact;
+
