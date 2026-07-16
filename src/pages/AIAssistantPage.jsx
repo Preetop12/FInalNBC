@@ -42,6 +42,9 @@ export default function AIAssistantPage() {
   const [messages, setMessages] = useState(INITIAL_MESSAGES)
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('nbc_gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || '')
+  const [showKeyInput, setShowKeyInput] = useState(false)
+  
   const bottomRef = useRef(null)
   const navigate = useNavigate()
 
@@ -80,12 +83,72 @@ export default function AIAssistantPage() {
       )
 
       let responseText = ''
-      if (matches.length > 0) {
-        responseText = `I found **${matches.length} matching car(s)** in our live inventory:\n\n` + 
-          matches.map(c => `🚗 **[${c.year} ${c.name}](/car/${c.id})** — ${c.priceDisplay} | Location: ${c.location} | Driven: ${c.mileage}`).join('\n\n') +
-          `\n\nWould you like me to help you schedule a test drive or contact the seller?`
+
+      if (apiKey) {
+        try {
+          const activeCarsList = allCars
+            .filter(c => c.status === 'active')
+            .map(c => `- ${c.year} ${c.make} ${c.model} (${c.fuelType}, ${c.transmission}): ₹${(c.price / 100000).toFixed(1)}L, Location: ${c.location}, ID: ${c.id}`)
+            .join('\n')
+
+          const systemPrompt = `You are "NoBroker AI", an advanced car search assistant for NoBrokerCars.
+Your goal is to help users find the best cars from our live inventory, compare models, and give helpful insights.
+
+Here is our live car inventory:
+${activeCarsList}
+
+Guidelines:
+1. Always suggest and recommend cars from the live inventory above. When mentioning a car from the inventory, link to it like this: [2023 Toyota Fortuner](/car/toyota-fortuner-legender-2023) using their ID, so the user can click it.
+2. If a customer asks a general car question (e.g. "What is the difference between CVT and AMT?" or "Suggest a good family car" or "Which fuel type is best?"), answer it dynamically, accurately, and helpful.
+3. Be professional, friendly, and brief (no more than 3-4 sentences per response). Do not make up cars that are not in the list; if you suggest a car not in our list, clarify that we don't have it in stock currently but show what similar options we do have.`
+
+          const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    role: 'user',
+                    parts: [{ text: text }]
+                  }
+                ],
+                systemInstruction: {
+                  parts: [{ text: systemPrompt }]
+                }
+              })
+            }
+          )
+
+          if (!response.ok) {
+            throw new Error(`Gemini API returned status ${response.status}`)
+          }
+
+          const resData = await response.json()
+          responseText = resData.candidates?.[0]?.content?.parts?.[0]?.text || 'I am sorry, I could not process that request.'
+        } catch (apiErr) {
+          console.error('Gemini API Error, falling back to static matching:', apiErr)
+          // Fallback to static matches if API fails
+          if (matches.length > 0) {
+            responseText = `I found **${matches.length} matching car(s)** in our live inventory:\n\n` + 
+              matches.map(c => `🚗 **[${c.year} ${c.name}](/car/${c.id})** — ${c.priceDisplay} | Location: ${c.location} | Driven: ${c.mileage}`).join('\n\n') +
+              `\n\nWould you like me to help you schedule a test drive or contact the seller?`
+          } else {
+            responseText = getStaticAIResponse(text)
+          }
+        }
       } else {
-        responseText = getStaticAIResponse(text)
+        // Fallback to static matches if no API key set
+        if (matches.length > 0) {
+          responseText = `I found **${matches.length} matching car(s)** in our live inventory:\n\n` + 
+            matches.map(c => `🚗 **[${c.year} ${c.name}](/car/${c.id})** — ${c.priceDisplay} | Location: ${c.location} | Driven: ${c.mileage}`).join('\n\n') +
+            `\n\nWould you like me to help you schedule a test drive or contact the seller?`
+        } else {
+          responseText = getStaticAIResponse(text)
+        }
       }
 
       setTimeout(() => {
@@ -142,6 +205,49 @@ export default function AIAssistantPage() {
         </div>
       </div>
 
+      {/* API Key Connection Bar */}
+      <div className="ai-api-bar glass" style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface-container-low)' }}>
+        <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <span className="body-m" style={{ color: apiKey ? 'var(--secondary)' : 'var(--text-secondary)' }}>
+            {apiKey ? '🟢 Live AI Mode Connected (Gemini 2.5 Flash)' : '🟡 Demo Mode (Connected to pre-loaded responses)'}
+          </span>
+          <button className="btn-secondary" style={{ padding: '0.375rem 0.75rem', fontSize: '0.875rem' }} onClick={() => setShowKeyInput(!showKeyInput)}>
+            {showKeyInput ? 'Hide Settings' : 'Configure Live AI ⚙️'}
+          </button>
+        </div>
+        
+        {showKeyInput && (
+          <div className="container" style={{ padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap', background: 'var(--surface-container-lowest)' }}>
+            <div style={{ flex: 1, minWidth: '250px' }}>
+              <label className="label-s" style={{ display: 'block', marginBottom: '0.375rem', fontWeight: 600 }}>Google Gemini API Key</label>
+              <input
+                type="password"
+                placeholder="Paste your Gemini API Key here (AIzaSy...)"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface-container-high)', color: 'var(--text-primary)' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.25rem' }}>
+              <button className="btn-primary" onClick={() => {
+                if (apiKey.trim()) {
+                  localStorage.setItem('nbc_gemini_api_key', apiKey.trim());
+                  setShowKeyInput(false);
+                  alert('Gemini API Key saved successfully! The AI will now answer any custom customer questions.');
+                }
+              }}>Save Key</button>
+              <button className="btn-ghost" style={{ color: '#ff6b6b' }} onClick={() => {
+                localStorage.removeItem('nbc_gemini_api_key');
+                setApiKey('');
+                setShowKeyInput(false);
+                alert('API Key cleared. Reverted to pre-loaded demo answers.');
+              }}>Reset</button>
+              <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" style={{ alignSelf: 'center', fontSize: '0.875rem', color: 'var(--secondary)', textDecoration: 'underline', marginLeft: '0.5rem' }}>Get Free Key ↗</a>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Chat area */}
       <div className="container ai-chat-container">
         <div className="ai-messages" id="ai-messages-list">
@@ -155,7 +261,7 @@ export default function AIAssistantPage() {
                   const formatted = line
                     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                     .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" style="color: var(--secondary); text-decoration: underline; font-weight: bold;">$1</a>')
-                  return <p key={i} dangerouslySetInnerHTML={{ __html: formatted }} />
+                  return <p key={i} dangerouslySetInnerHTML={{ __html: formatted }} style={{ margin: 0, minHeight: '1.25rem' }} />
                 })}
                 <span className="msg-time">{msg.time}</span>
               </div>
