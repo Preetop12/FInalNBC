@@ -41,7 +41,7 @@ export function AuthProvider({ children }) {
             email: session.user.email,
             name: profile?.name || session.user.email.split('@')[0],
             phone: profile?.phone || '',
-            role: profile?.role || 'user',
+            role: session.user.email === 'admin@nobrokercars.com' ? 'admin' : (profile?.role || 'user'),
             avatar: profile?.avatar || session.user.email[0].toUpperCase(),
             banned: profile?.banned || false,
           };
@@ -69,7 +69,7 @@ export function AuthProvider({ children }) {
           email: session.user.email,
           name: profile?.name || session.user.email.split('@')[0],
           phone: profile?.phone || '',
-          role: profile?.role || 'user',
+          role: session.user.email === 'admin@nobrokercars.com' ? 'admin' : (profile?.role || 'user'),
           avatar: profile?.avatar || session.user.email[0].toUpperCase(),
           banned: profile?.banned || false,
         };
@@ -148,7 +148,7 @@ export function AuthProvider({ children }) {
         email: data.user.email,
         name: profile?.name || email.split('@')[0],
         phone: profile?.phone || '',
-        role: profile?.role || 'user',
+        role: email === 'admin@nobrokercars.com' ? 'admin' : (profile?.role || 'user'),
         avatar: profile?.avatar || email[0].toUpperCase(),
         banned: profile?.banned || false,
       };
@@ -248,7 +248,7 @@ export function AuthProvider({ children }) {
           email: data.user.email,
           name: profile?.name || name,
           phone: profile?.phone || '',
-          role: profile?.role || role,
+          role: data.user.email === 'admin@nobrokercars.com' ? 'admin' : (profile?.role || role),
           avatar: profile?.avatar || email[0].toUpperCase(),
           banned: false,
         };
