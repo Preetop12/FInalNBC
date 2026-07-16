@@ -14,18 +14,6 @@ export default function Footer() {
           <p className="body-m footer-tagline">
             India's premium car marketplace.<br />No brokerage. No middlemen. Just value.
           </p>
-          <div className="footer-social">
-            {[
-              { emoji: '📘', label: 'Facebook' },
-              { emoji: '🐦', label: 'Twitter / X' },
-              { emoji: '📷', label: 'Instagram' },
-              { emoji: '▶️', label: 'YouTube' },
-            ].map((s) => (
-              <a key={s.label} href="#" className="footer-social-link" aria-label={s.label} title={s.label}>
-                {s.emoji}
-              </a>
-            ))}
-          </div>
         </div>
 
         {/* Links */}
@@ -57,7 +45,7 @@ export default function Footer() {
 
       <div className="footer-bottom container">
         <p className="footer-copy">
-          © 2024 NoBrokerCars Pvt. Ltd. · Aerodynamic Minimalism · Made in India 🇮🇳
+          © 2024 NoBrokerCars Pvt. Ltd. · Aerodynamic Minimalism · Made in India
         </p>
         <div className="footer-bottom-links">
           <a href="#" className="footer-link" style={{ fontSize: '0.75rem' }}>Privacy</a>
