@@ -303,6 +303,10 @@ export const getCars = async () => {
       .select('*')
       .order('created_at', { ascending: false });
     if (error) throw error;
+    if (!data || data.length === 0) {
+      console.log('Supabase database is empty, displaying local fallback cars.');
+      return getLocalCarsRaw().map(mapCarFromDb);
+    }
     return data.map(mapCarFromDb);
   } catch (err) {
     console.error('Supabase error in getCars, falling back to local:', err);
@@ -322,6 +326,10 @@ export const getCarById = async (id) => {
       .eq('id', id)
       .maybeSingle();
     if (error) throw error;
+    if (!data) {
+      const car = getLocalCarsRaw().find(c => c.id === id);
+      return car ? mapCarFromDb(car) : null;
+    }
     return mapCarFromDb(data);
   } catch (err) {
     console.error('Supabase error in getCarById, falling back to local:', err);
@@ -346,6 +354,13 @@ export const getFeaturedCars = async () => {
       .order('created_at', { ascending: false })
       .limit(6);
     if (error) throw error;
+    if (!data || data.length === 0) {
+      return getLocalCarsRaw()
+        .filter(c => c.status === 'active')
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .slice(0, 6)
+        .map(mapCarFromDb);
+    }
     return data.map(mapCarFromDb);
   } catch (err) {
     console.error('Supabase error in getFeaturedCars, falling back to local:', err);
