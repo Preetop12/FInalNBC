@@ -93,6 +93,12 @@ export default function HomePage() {
       x: 40, opacity: 0, duration: 0.6, stagger: 0.1, ease: 'power2.out'
     })
 
+    // Reviews Grid Stagger
+    gsap.from('.reviews-grid .review-card', {
+      scrollTrigger: { trigger: '.reviews-grid', start: 'top 85%', once: true },
+      y: 40, opacity: 0, duration: 0.8, stagger: 0.12, ease: 'power3.out'
+    })
+
     // CTA Banner
     gsap.from('.cta-banner', {
       scrollTrigger: { trigger: '.cta-banner', start: 'top 90%', once: true },
@@ -282,6 +288,38 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── CUSTOMER REVIEWS ── */}
+      <section className="section reviews-section">
+        <div className="container">
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <p className="label-m">Testimonials</p>
+            <h2 className="headline-l" style={{ marginTop: '0.5rem' }}>What Our Customers Say</h2>
+          </div>
+
+          <div className="reviews-grid">
+            {REVIEWS.map((review) => (
+              <div key={review.id} className="review-card">
+                <div>
+                  <div className="review-rating">
+                    {Array.from({ length: review.rating }).map((_, i) => (
+                      <span key={i}>★</span>
+                    ))}
+                  </div>
+                  <p className="review-text">"{review.text}"</p>
+                </div>
+                <div className="review-user">
+                  <div className="review-avatar">{review.avatar}</div>
+                  <div className="review-info">
+                    <span className="review-name">{review.name}</span>
+                    <span className="review-role">{review.location}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── CTA BANNER ── */}
       <section className="cta-banner-section">
         <div className="container">
@@ -303,4 +341,31 @@ const ADVANTAGES = [
   { icon: '✅', title: 'Verified Sellers Only', desc: 'Every listing is KYC-verified. No fake ads, no scams, no wasted time.' },
   { icon: '💰', title: 'Zero Brokerage', desc: 'You pay the price shown. Not a rupee more to any middleman, ever.' },
   { icon: '🛡️', title: 'Secure Transactions', desc: 'End-to-end encrypted communication and a secure payment process.' },
+]
+
+const REVIEWS = [
+  {
+    id: 1,
+    name: 'Arjun Mehta',
+    location: 'Mumbai',
+    avatar: 'AM',
+    rating: 5,
+    text: 'Sold my Tata Safari through NoBrokerCars in just 4 days. Absolutely zero brokerage fee and the AI price evaluation was spot on. Highly recommended!'
+  },
+  {
+    id: 2,
+    name: 'Sneha Rao',
+    location: 'Bangalore',
+    avatar: 'SR',
+    rating: 5,
+    text: 'Bought a Kia Seltos. The seller verification process gave me complete peace of mind. End-to-end transparent process without any middleman hassle.'
+  },
+  {
+    id: 3,
+    name: 'Vikram Singh',
+    location: 'Delhi NCR',
+    avatar: 'VS',
+    rating: 5,
+    text: 'Listing my car was a breeze. The interface is premium and clean, and the AI chatbot helper gave great negotiating insights. Excellent platform!'
+  }
 ]

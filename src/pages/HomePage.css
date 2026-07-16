@@ -443,3 +443,118 @@
     font-size: 1.75rem;
   }
 }
+
+/* ── REVIEWS SECTION ── */
+.reviews-section {
+  background: var(--surface);
+  position: relative;
+}
+
+.reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+.review-card {
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-lg);
+  padding: 2.25rem;
+  transition: background var(--transition), border-color var(--transition), transform var(--transition-spring), box-shadow var(--transition);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+}
+
+.review-card::before {
+  content: '“';
+  position: absolute;
+  top: 1rem;
+  right: 1.5rem;
+  font-size: 4rem;
+  color: var(--secondary);
+  opacity: 0.08;
+  font-family: serif;
+  line-height: 1;
+}
+
+.review-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(140, 240, 255, 0.25);
+  background: var(--surface-container);
+  box-shadow: var(--shadow-lg), var(--shadow-glow);
+}
+
+.review-rating {
+  color: var(--gold);
+  font-size: 1.1rem;
+  letter-spacing: 2px;
+  margin-bottom: 1rem;
+  display: flex;
+  gap: 0.2rem;
+}
+
+.review-text {
+  font-style: italic;
+  line-height: 1.65;
+  color: var(--on-surface-variant);
+  margin-bottom: 1.5rem;
+  flex-grow: 1;
+}
+
+.review-user {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border-top: 1px solid var(--outline-variant);
+  padding-top: 1rem;
+}
+
+.review-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-container) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--on-secondary);
+  font-size: 0.9375rem;
+  flex-shrink: 0;
+}
+
+.review-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.review-name {
+  font-weight: 600;
+  color: var(--on-surface);
+  font-size: 0.9375rem;
+}
+
+.review-role {
+  font-size: 0.75rem;
+  color: var(--outline);
+}
+
+@media (max-width: 1024px) {
+  .reviews-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .reviews-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}
+

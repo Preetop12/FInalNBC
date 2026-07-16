@@ -216,6 +216,10 @@
   .listing-controls {
     width: 100%;
   }
+  .listing-sort-select, .filter-toggle {
+    flex: 1;
+    text-align: center;
+  }
   .listing-search-input {
     width: 100%;
     flex: 1;

@@ -306,17 +306,17 @@ export default function AdminDashboardPage() {
                       </div>
                       <p className="body-m" style={{ marginTop: '0.25rem' }}>📱 {c.phone}</p>
                       <p className="body-m" style={{ marginTop: '0.25rem' }}>{c.message}</p>
-                    </div>
-                    <div style={{ display: 'flex', gap: '0.375rem', flexDirection: 'column' }}>
-                      {c.phone && (
-                        <button className="btn-ghost admin-action-btn" style={{ color: '#25d366', fontSize: '0.75rem' }}
-                          onClick={() => openWhatsApp(c.phone.replace(/\D/g,''), `Hi ${c.name}, regarding your inquiry on NoBrokerCars...`)}
-                        >💬 WhatsApp</button>
-                      )}
-                      {!c.read && (
-                        <button className="btn-ghost admin-action-btn" onClick={() => handleReadContact(c.id)}>Mark Read</button>
-                      )}
-                      <button className="btn-ghost admin-action-btn" style={{ color: '#ff6b6b' }} onClick={() => handleDeleteContact(c.id)}>🗑</button>
+                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
+                        {c.phone && (
+                          <button className="btn-secondary admin-action-btn" style={{ color: '#25d366', fontSize: '0.75rem', padding: '0.35rem 0.75rem' }}
+                            onClick={() => openWhatsApp(c.phone.replace(/\D/g,''), `Hi ${c.name}, regarding your inquiry on NoBrokerCars...`)}
+                          >💬 WhatsApp</button>
+                        )}
+                        {!c.read && (
+                          <button className="btn-secondary admin-action-btn" style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem' }} onClick={() => handleReadContact(c.id)}>Mark Read</button>
+                        )}
+                        <button className="btn-secondary admin-action-btn" style={{ color: '#ff6b6b', fontSize: '0.75rem', padding: '0.35rem 0.75rem' }} onClick={() => handleDeleteContact(c.id)}>🗑 Delete</button>
+                      </div>
                     </div>
                   </div>
                 ))
@@ -341,10 +341,17 @@ export default function AdminDashboardPage() {
                         </div>
                         <p className="body-m" style={{ marginTop: '0.25rem' }}>📱 {inq.buyerPhone} · ✉ {inq.buyerEmail}</p>
                         <p className="body-m" style={{ marginTop: '0.25rem' }}>{inq.message}</p>
+                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
+                          {inq.buyerPhone && (
+                            <button className="btn-secondary admin-action-btn" style={{ color: '#25d366', fontSize: '0.75rem', padding: '0.35rem 0.75rem' }}
+                              onClick={() => openWhatsApp(inq.buyerPhone.replace(/\D/g,''), `Hi ${inq.buyerName}, regarding your inquiry for the ${car ? `${car.make} ${car.model}` : 'car'} on NoBrokerCars...`)}
+                            >💬 WhatsApp</button>
+                          )}
+                          {!inq.read && (
+                            <button className="btn-secondary admin-action-btn" style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem' }} onClick={() => handleReadInquiry(inq.id)}>Mark Read</button>
+                          )}
+                        </div>
                       </div>
-                      {!inq.read && (
-                        <button className="btn-ghost admin-action-btn" onClick={() => handleReadInquiry(inq.id)}>Mark Read</button>
-                      )}
                     </div>
                   )
                 })
