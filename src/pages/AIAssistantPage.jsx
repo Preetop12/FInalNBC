@@ -103,7 +103,7 @@ Guidelines:
 3. Be professional, friendly, and brief (no more than 3-4 sentences per response). Do not make up cars that are not in the list; if you suggest a car not in our list, clarify that we don't have it in stock currently but show what similar options we do have.`
 
           const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
             {
               method: 'POST',
               headers: {
