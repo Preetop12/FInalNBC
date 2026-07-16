@@ -485,15 +485,15 @@ export default function AdminDashboardPage() {
                 </button>
                 <button className="btn-secondary" onClick={async () => {
                   try {
-                    const { seedDatabase } = await import('../lib/seedMongo.js')
-                    await seedDatabase()
+                    const { seedSupabaseDatabase } = await import('../lib/seedSupabase.js')
+                    await seedSupabaseDatabase()
                     refresh()
                   } catch (e) {
                     console.error(e)
                     alert('Error running seeder. See console.')
                   }
                 }}>
-                  🌱 Initialize Database (MongoDB)
+                  🌱 Initialize Database (Supabase)
                 </button>
               </div>
             </div>
