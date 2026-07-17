@@ -31,8 +31,8 @@ export default function Navbar() {
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (menuOpen) setMenuOpen(false)
-  }, [location.pathname, menuOpen])
+    setMenuOpen(false)
+  }, [location.pathname])
 
   const navLinks = [
     { to: '/', label: 'Home' },
