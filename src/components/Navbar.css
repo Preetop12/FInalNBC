@@ -194,6 +194,10 @@
 @media (max-width: 768px) {
   .navbar-links { display: none; }
   .hamburger { display: flex; }
-  .navbar-actions .btn-primary { display: none; }
-  .navbar-actions .dashboard-avatar-wrap { display: none; }
+  .navbar-actions .btn-primary {
+    display: inline-flex;
+  }
+  .navbar-actions .dashboard-avatar-wrap {
+    display: flex;
+  }
 }
