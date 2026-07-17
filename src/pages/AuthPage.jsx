@@ -5,6 +5,7 @@ import './AuthPage.css'
 
 export default function AuthPage() {
   const [tab, setTab] = useState('login')
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState('user')
@@ -21,8 +22,7 @@ export default function AuthPage() {
     
     try {
       if (tab === 'signup') {
-        const name = email.split('@')[0]
-        await signup(email, password, name, role)
+        await signup(email, password, name || email.split('@')[0], role)
         if (role === 'admin') navigate('/admin')
         else navigate('/dashboard')
       } else if (tab === 'login') {
@@ -80,6 +80,19 @@ export default function AuthPage() {
         )}
 
         <form onSubmit={handleSubmit} className="auth-form">
+          {tab === 'signup' && (
+            <div className="form-group">
+              <label className="label-s auth-label">Full Name</label>
+              <input 
+                type="text" 
+                className="auth-input" 
+                placeholder="John Doe"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+          )}
           <div className="form-group">
             <label className="label-s auth-label">Email Address</label>
             <input 

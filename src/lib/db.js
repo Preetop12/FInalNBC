@@ -625,12 +625,18 @@ export const upsertUser = async (userData) => {
         .eq('id', existing.id);
       if (error) throw error;
     } else {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user && user.email === userData.email) {
+      let userId = userData.id;
+      if (!userId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && user.email === userData.email) {
+          userId = user.id;
+        }
+      }
+      if (userId) {
         const { error } = await supabase
           .from('profiles')
           .upsert({
-            id: user.id,
+            id: userId,
             ...profileData
           });
         if (error) throw error;

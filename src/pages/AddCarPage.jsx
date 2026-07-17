@@ -122,7 +122,7 @@ export default function AddCarPage() {
       const newCar = await addCar(carData)
 
       // Update user as seller
-      await upsertUser({ email: user.email, name: carData.sellerName, phone: form.sellerPhone, role: 'seller' })
+      await upsertUser({ id: user.id, email: user.email, name: carData.sellerName, phone: form.sellerPhone, role: 'seller' })
 
       // Notify admin via WhatsApp
       try { notifyAdminNewListing(newCar) } catch { /* ignore */ }

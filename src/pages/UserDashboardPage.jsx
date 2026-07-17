@@ -61,7 +61,7 @@ export default function UserDashboardPage() {
   }
 
   const handleSaveProfile = async () => {
-    await upsertUser({ email: user.email, name: profile.name, phone: profile.phone, role: user.role })
+    await upsertUser({ id: user.id, email: user.email, name: profile.name, phone: profile.phone, role: user.role })
     setProfileSaved(true)
     setEditProfile(false)
     setTimeout(() => setProfileSaved(false), 2500)

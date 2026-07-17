@@ -236,6 +236,7 @@ export function AuthProvider({ children }) {
       
       if (data.user) {
         await upsertUser({
+          id: data.user.id,
           email,
           name,
           role,
