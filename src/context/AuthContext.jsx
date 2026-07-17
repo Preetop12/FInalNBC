@@ -162,24 +162,7 @@ export function AuthProvider({ children }) {
       localStorage.setItem('nbc_current_user', JSON.stringify(updatedUser));
       return updatedUser;
     } catch (err) {
-      console.error('Supabase auth login failed, checking local credentials:', err);
-      const profiles = JSON.parse(localStorage.getItem('nbc_profiles') || '[]');
-      const profile = profiles.find(p => p.email === email);
-      if (profile) {
-        if (profile.banned) throw new Error('This account has been banned. Please contact support.');
-        const loggedUser = {
-          id: profile.id || Math.random().toString(36).slice(2, 10),
-          email: profile.email,
-          name: profile.name,
-          phone: profile.phone || '',
-          role: profile.role || 'user',
-          avatar: profile.avatar || profile.email[0].toUpperCase(),
-          banned: profile.banned || false
-        };
-        setUser(loggedUser);
-        localStorage.setItem('nbc_current_user', JSON.stringify(loggedUser));
-        return loggedUser;
-      }
+      console.error('Supabase auth login failed:', err);
       throw err;
     }
   };
@@ -259,40 +242,8 @@ export function AuthProvider({ children }) {
       }
       return null;
     } catch (err) {
-      console.error('Supabase auth signup failed, falling back to local creation:', err);
-      const profiles = JSON.parse(localStorage.getItem('nbc_profiles') || '[]');
-      const existing = profiles.find(p => p.email === email);
-      if (existing) {
-        throw new Error('User already exists with this email address.');
-      }
-      
-      const newProfile = {
-        id: Math.random().toString(36).slice(2, 10),
-        email,
-        name,
-        phone: '',
-        role,
-        avatar: email[0].toUpperCase(),
-        joined_at: new Date().toISOString(),
-        banned: false
-      };
-      
-      profiles.push(newProfile);
-      localStorage.setItem('nbc_profiles', JSON.stringify(profiles));
-      
-      const newUser = {
-        id: newProfile.id,
-        email: newProfile.email,
-        name: newProfile.name,
-        phone: newProfile.phone,
-        role: newProfile.role,
-        avatar: newProfile.avatar,
-        banned: false
-      };
-      
-      setUser(newUser);
-      localStorage.setItem('nbc_current_user', JSON.stringify(newUser));
-      return newUser;
+      console.error('Supabase auth signup failed:', err);
+      throw err;
     }
   };
 
